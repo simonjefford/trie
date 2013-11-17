@@ -203,7 +203,7 @@ func testPrefixExample(l TestLogger, i int, ex Example) {
 func TestDelReturnsStatus(t *testing.T) {
 	trie := NewTrie()
 	path := []string{"foo"}
-	trie.Set(path, "bar")
+	trie = trie.Set(path, "bar")
 	ok := trie.Del(path)
 	if !ok {
 		t.Error("trie.Del didn't return true when deleting a key that exists!")
@@ -214,12 +214,25 @@ func TestDelReturnsStatus(t *testing.T) {
 	}
 }
 
+func TestImmutability(t *testing.T) {
+	trie := NewTrie()
+	trie = trie.Set([]string{"foo", "bar", "baz"}, "42")
+	trie2 := trie.Set([]string{"foo", "bar", "baz"}, "43")
+
+	val1, _ := trie.Get([]string{"foo", "bar", "baz"})
+	val2, _ := trie2.Get([]string{"foo", "bar", "baz"})
+
+	if val1 == val2 {
+		t.Error("Not immutable!!!!")
+	}
+}
+
 func buildExampleTrie(l TestLogger, pairs []Pair) *Trie {
 	trie := NewTrie()
 	for _, p := range pairs {
 		switch p.meth {
 		case Set:
-			trie.Set(p.path, p.val)
+			trie = trie.Set(p.path, p.val)
 			l.Logf("trie.Set(path:%v, val:%v)", p.path, p.val)
 		case Del:
 			trie.Del(p.path)

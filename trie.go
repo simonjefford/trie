@@ -79,23 +79,39 @@ func (t *Trie) GetLongestPrefix(path []string) (entry interface{}, ok bool) {
 //
 // Takes a path (which can be empty, to denote the root element of the Trie),
 // and an arbitrary value (interface{}) to use as the leaf data.
-func (t *Trie) Set(path []string, value interface{}) {
+func (t *Trie) Set(path []string, value interface{}) *Trie {
+	n := t
+
+	if len(n.Children) > 0 || n.Entry != nil {
+		n = n.dup()
+	}
+
 	if len(path) == 0 {
-		t.setentry(value)
-		return
+		n.setentry(value)
+		return n
 	}
 
 	key := path[0]
 	newpath := path[1:]
 
-	res, ok := t.Children[key]
+	res, ok := n.Children[key]
 	if !ok {
 		// Trie node that should hold entry doesn't already exist, so let's create it
 		res = NewTrie()
-		t.Children[key] = res
 	}
+	n.Children[key] = res.Set(newpath, value)
 
-	res.Set(newpath, value)
+	return n
+}
+
+func (s *Trie) dup() *Trie {
+	d := NewTrie()
+	d.Leaf = s.Leaf
+	d.Entry = s.Entry
+	for k, v := range s.Children {
+		d.Children[k] = v
+	}
+	return d
 }
 
 // Del removes an element from the Trie. Returns a boolean indicating whether an
