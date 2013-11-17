@@ -173,16 +173,29 @@ func TestPrefixExamples(t *testing.T) {
 	}
 }
 
-func testPrefixExample(t *testing.T, i int, ex Example) {
-	trie := buildExampleTrie(t, ex.pairs)
+type TestLogger interface {
+	Logf(format string, args ...interface{})
+	Errorf(format string, args ...interface{})
+}
+
+func BenchmarkPrefixExamples(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		for j, ex := range prefixExamples {
+			testPrefixExample(b, j, ex)
+		}
+	}
+}
+
+func testPrefixExample(l TestLogger, i int, ex Example) {
+	trie := buildExampleTrie(l, ex.pairs)
 	for _, c := range ex.checks {
 		val, ok := trie.GetLongestPrefix(c.path)
-		t.Logf("trie.GetLongestPrefix(path:%v) -> val:%v, ok:%v", c.path, val, ok)
+		l.Logf("trie.GetLongestPrefix(path:%v) -> val:%v, ok:%v", c.path, val, ok)
 		if ok != c.ok {
-			t.Errorf("Example %d check %+v: trie.Get ok was %v (expected %v)", i, c, ok, c.ok)
+			l.Errorf("Example %d check %+v: trie.Get ok was %v (expected %v)", i, c, ok, c.ok)
 		}
 		if val != c.val {
-			t.Errorf("Example %d check %+v: trie.Get val was %v (expected %v)", i, c, val, c.val)
+			l.Errorf("Example %d check %+v: trie.Get val was %v (expected %v)", i, c, val, c.val)
 		}
 	}
 }
@@ -201,18 +214,18 @@ func TestDelReturnsStatus(t *testing.T) {
 	}
 }
 
-func buildExampleTrie(t *testing.T, pairs []Pair) *Trie {
+func buildExampleTrie(l TestLogger, pairs []Pair) *Trie {
 	trie := NewTrie()
 	for _, p := range pairs {
 		switch p.meth {
 		case Set:
 			trie.Set(p.path, p.val)
-			t.Logf("trie.Set(path:%v, val:%v)", p.path, p.val)
+			l.Logf("trie.Set(path:%v, val:%v)", p.path, p.val)
 		case Del:
 			trie.Del(p.path)
-			t.Logf("trie.Del(path:%v)", p.path)
+			l.Logf("trie.Del(path:%v)", p.path)
 		default:
-			t.Errorf("Unrecognised method %v in Pair %v", p.meth, p)
+			l.Errorf("Unrecognised method %v in Pair %v", p.meth, p)
 		}
 	}
 	return trie
